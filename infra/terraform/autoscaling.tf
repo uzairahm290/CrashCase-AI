@@ -99,7 +99,7 @@ resource "aws_cloudwatch_metric_alarm" "api_latency" {
   }
 }
 
-# --- Budget guard: email when spend passes $20 ----------------------------------------
+# --- Budget guard: email at 80% of the monthly budget -------------------------------
 
 variable "budget_email" {
   description = "Email for the monthly budget alert. Empty = no budget."
@@ -107,11 +107,17 @@ variable "budget_email" {
   default     = ""
 }
 
+variable "budget_usd" {
+  description = "Monthly budget in USD. The full stack running 24/7 is about $90/month."
+  type        = number
+  default     = 50
+}
+
 resource "aws_budgets_budget" "monthly" {
   count        = var.budget_email == "" ? 0 : 1
   name         = "${var.name}-monthly"
   budget_type  = "COST"
-  limit_amount = "20"
+  limit_amount = tostring(var.budget_usd)
   limit_unit   = "USD"
   time_unit    = "MONTHLY"
   notification {
