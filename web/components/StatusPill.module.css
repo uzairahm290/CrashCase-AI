@@ -1,0 +1,52 @@
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 10px 3px 8px;
+  border-radius: 999px;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  background: #e6eaef;
+  color: var(--steel);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.done {
+  background: var(--marker-wash);
+  color: var(--marker-ink);
+}
+
+.done .dot {
+  background: var(--marker);
+  box-shadow: 0 0 0 2px var(--marker-ink) inset;
+}
+
+.approved {
+  background: var(--ok-wash);
+  color: var(--ok);
+}
+
+.declined,
+.failed,
+.rejected {
+  background: var(--alert-wash);
+  color: var(--alert);
+}
+
+.queued .dot,
+.processing .dot {
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.25;
+  }
+}

@@ -1,8 +1,9 @@
 # Local stack: docker compose up --build
+#   App          http://localhost:3000
 #   API          http://localhost:8000/docs
 #   MLflow       http://localhost:5000
 #   Prometheus   http://localhost:9090
-#   Grafana      http://localhost:3000  (admin / $GRAFANA_PASSWORD)
+#   Grafana      http://localhost:3001  (admin / $GRAFANA_PASSWORD)
 
 x-app: &app
   build:
@@ -19,6 +20,7 @@ x-app: &app
     CC_REDIS_URL: redis://redis:6379/0
     CC_INDEX_BACKEND: pgvector
     CC_UPLOAD_DIR: /app/data/uploads
+    CC_CORS_ORIGINS: http://localhost:3000
   volumes:
     - uploads:/app/data/uploads
     - ./models:/app/models:ro
@@ -41,6 +43,18 @@ services:
       interval: 30s
       timeout: 5s
       start_period: 30s
+
+  web:
+    build: ./web
+    image: crashcase-web:${IMAGE_TAG:-dev}
+    environment:
+      API_URL: http://api:8000
+      GRAFANA_URL: http://localhost:3001
+      MLFLOW_URL: http://localhost:5000
+      PROMETHEUS_URL: http://localhost:9090
+      API_DOCS_URL: http://localhost:8000/docs
+    ports: ["3000:3000"]
+    depends_on: [api]
 
   seed:
     <<: *app
@@ -93,7 +107,7 @@ services:
     volumes:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
-    ports: ["3000:3000"]
+    ports: ["3001:3000"]
     depends_on: [prometheus]
 
 volumes:

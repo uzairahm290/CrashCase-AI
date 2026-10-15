@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     # When true, claims are processed inside the API request (tests / local dev without a worker)
     inline_processing: bool = False
+    cors_origins: str = "http://localhost:3000"
 
     # Storage: "local" or "s3"
     storage_backend: str = "local"
@@ -37,7 +38,7 @@ class Settings(BaseSettings):
     max_brightness: float = 225.0
 
     # Fraud
-    duplicate_hash_distance: int = 6
+    duplicate_hash_distance: int = 18  # out of 256 bits
 
     # Report LLM (Groq, OpenAI-compatible). Empty key -> template report.
     llm_api_key: str = ""

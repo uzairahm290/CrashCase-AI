@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, DateTime, String, Text, create_engine, select
+from sqlalchemy import JSON, DateTime, Float, String, Text, create_engine, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
 from crashcase.config import Settings
@@ -28,6 +28,8 @@ class Claim(Base):
     image_keys: Mapped[list] = mapped_column(JSON, default=list)
     result: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    final_cost_pkr: Mapped[float | None] = mapped_column(Float, nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
 
@@ -39,7 +41,7 @@ class ImageHash(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     claim_id: Mapped[str] = mapped_column(String(36), index=True)
-    dhash: Mapped[str] = mapped_column(String(16), index=True)
+    dhash: Mapped[str] = mapped_column(String(64), index=True)
 
 
 _engines: dict[str, sessionmaker] = {}

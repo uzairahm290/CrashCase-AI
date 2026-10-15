@@ -9,11 +9,15 @@ EDITING_SOFTWARE = ("photoshop", "gimp", "snapseed", "lightroom", "picsart", "ca
 _SOFTWARE_TAG = 0x0131
 
 
-def dhash(image: Image.Image, size: int = 8) -> str:
-    """64-bit difference hash; near-identical photos have a small Hamming distance."""
+def dhash(image: Image.Image, size: int = 16) -> str:
+    """256-bit difference hash; near-identical photos have a small Hamming distance.
+
+    16x16 rather than the usual 8x8: two different cars shot from the same angle often
+    collide at 64 bits, which would wrongly flag honest claims.
+    """
     g = np.asarray(image.convert("L").resize((size + 1, size)), dtype=np.int16)
     bits = (g[:, 1:] > g[:, :-1]).ravel()
-    return f"{int(''.join('1' if b else '0' for b in bits), 2):016x}"
+    return f"{int(''.join('1' if b else '0' for b in bits), 2):0{size * size // 4}x}"
 
 
 def hamming(a: str, b: str) -> int:

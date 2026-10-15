@@ -23,9 +23,10 @@ def test_dhash_detects_reused_photo():
     a, b = make_image(1), make_image(2)
     ha, hb = fraud.dhash(a), fraud.dhash(b)
     resaved = Image.open(io.BytesIO(to_bytes(a.resize((300, 225)))))
-    assert fraud.hamming(ha, fraud.dhash(resaved)) <= 6
-    assert fraud.hamming(ha, hb) > 10
-    assert fraud.find_duplicates([fraud.dhash(resaved)], [("old-claim", ha)], 6) == [
+    assert len(ha) == 64
+    assert fraud.hamming(ha, fraud.dhash(resaved)) <= 18
+    assert fraud.hamming(ha, hb) > 60
+    assert fraud.find_duplicates([fraud.dhash(resaved)], [("old-claim", ha)], 18) == [
         ("old-claim", fraud.hamming(ha, fraud.dhash(resaved)))
     ]
 

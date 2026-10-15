@@ -1,0 +1,198 @@
+@import "@fontsource-variable/archivo/standard.css";
+
+/* Inspection bay: concrete-grey floor, navy ink, hi-vis marker yellow for damage only. */
+:root {
+  --bay: #eef1f4;
+  --panel: #ffffff;
+  --ink: #16233a;
+  --steel: #5b6b80;
+  --rule: #d5dbe3;
+  --rule-strong: #b8c1cd;
+  --marker: #f2c230;
+  --marker-ink: #5c4500;
+  --marker-wash: #fdf3cf;
+  --alert: #c8372d;
+  --alert-wash: #fbe9e7;
+  --ok: #2f7a4f;
+  --ok-wash: #e4f2e9;
+  --lightbox: #0f1a2c;
+
+  --font: "Archivo Variable", "Archivo", system-ui, sans-serif;
+  /* Type scale on a 1.25 ratio from 15px */
+  --t-xs: 0.8rem;
+  --t-sm: 0.875rem;
+  --t-md: 0.9375rem;
+  --t-lg: 1.17rem;
+  --t-xl: 1.46rem;
+  --t-2xl: 1.83rem;
+  --t-3xl: 2.86rem;
+
+  --radius-s: 4px;
+  --radius-m: 8px;
+  --gutter: clamp(16px, 3vw, 32px);
+  --rail: 232px;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bay);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-variant-numeric: tabular-nums;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-stretch: 112%;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: var(--t-2xl);
+  font-weight: 750;
+}
+
+h2 {
+  font-size: var(--t-lg);
+  font-weight: 700;
+}
+
+h3 {
+  font-size: var(--t-md);
+  font-weight: 650;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--marker);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.muted {
+  color: var(--steel);
+}
+
+/* Big rupee figures: expanded width is the house signature for money. */
+.figure {
+  font-stretch: 125%;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1.5px solid var(--ink);
+  border-radius: var(--radius-s);
+  background: var(--ink);
+  color: #fff;
+  font-weight: 650;
+  font-stretch: 105%;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: #22324d;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-quiet {
+  background: transparent;
+  color: var(--ink);
+}
+
+.btn-quiet:hover {
+  background: rgba(22, 35, 58, 0.06);
+}
+
+.btn-marker {
+  background: var(--marker);
+  border-color: var(--marker);
+  color: var(--ink);
+}
+
+.btn-marker:hover {
+  background: #e6b51f;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-m);
+}
+
+.page {
+  padding: var(--gutter);
+  max-width: 1320px;
+}
+
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.page-head p {
+  margin-top: 6px;
+  max-width: 62ch;
+}
+
+.error-box {
+  padding: 14px 16px;
+  border-left: 4px solid var(--alert);
+  background: var(--alert-wash);
+  border-radius: var(--radius-s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

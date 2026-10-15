@@ -4,18 +4,30 @@ from __future__ import annotations
 
 import io
 import logging
+import mimetypes
+from collections import Counter
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Response, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image, UnidentifiedImageError
 from prometheus_fastapi_instrumentator import Instrumentator
-from sqlalchemy import text
+from sqlalchemy import select, text
 
 from crashcase import __version__
 from crashcase.config import Settings, get_settings
 from crashcase.db import Claim, get_sessionmaker
-from crashcase.schemas import CAR_CATEGORIES, ClaimOut, ClaimResult, ClaimStatus, ReviewIn
+from crashcase.schemas import (
+    CAR_CATEGORIES,
+    ClaimOut,
+    ClaimResult,
+    ClaimStatus,
+    ClaimSummary,
+    ReviewIn,
+    Stats,
+)
 from crashcase.storage import get_storage
 
 log = logging.getLogger("crashcase.api")
@@ -40,6 +52,12 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="CrashCase AI", version=__version__, lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=get_settings().cors_origins.split(","),
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 Instrumentator().instrument(app).expose(app, include_in_schema=False)
 
 
@@ -49,12 +67,36 @@ def _session(settings: Settings = Depends(get_settings)):
         yield session
 
 
+def _names(claim: Claim) -> list[str]:
+    return [k.split("/", 1)[1] for k in claim.image_keys or []]
+
+
 def _out(claim: Claim) -> ClaimOut:
     return ClaimOut(
         claim_id=claim.id,
         status=ClaimStatus(claim.status),
+        car_category=claim.car_category,
+        images=_names(claim),
+        created_at=claim.created_at,
         result=ClaimResult(**claim.result) if claim.result else None,
         error=claim.error,
+        final_cost_pkr=claim.final_cost_pkr,
+    )
+
+
+def _summary(claim: Claim) -> ClaimSummary:
+    r = claim.result or {}
+    return ClaimSummary(
+        claim_id=claim.id,
+        status=ClaimStatus(claim.status),
+        car_category=claim.car_category,
+        created_at=claim.created_at,
+        images=_names(claim),
+        damage_count=len(r.get("assessments", [])),
+        total_low_pkr=r.get("total_low_pkr"),
+        total_high_pkr=r.get("total_high_pkr"),
+        fraud_flagged=bool(r.get("fraud", {}).get("flagged")),
+        final_cost_pkr=claim.final_cost_pkr,
     )
 
 
@@ -107,6 +149,51 @@ async def create_claim(
     return _out(claim)
 
 
+@app.get("/claims", response_model=list[ClaimSummary])
+def list_claims(
+    status: ClaimStatus | None = None,
+    limit: int = Query(50, le=200),
+    session=Depends(_session),
+):
+    q = select(Claim).order_by(Claim.created_at.desc()).limit(limit)
+    if status:
+        q = q.where(Claim.status == status.value)
+    return [_summary(c) for c in session.scalars(q)]
+
+
+@app.get("/stats", response_model=Stats)
+def stats(session=Depends(_session)):
+    from crashcase.pipeline.run import get_pipeline
+
+    claims = list(session.scalars(select(Claim)))
+    results = [c.result for c in claims if c.result]
+    secs = [r["pipeline_seconds"] for r in results]
+    pipe = get_pipeline()
+    return Stats(
+        claims_total=len(claims),
+        by_status=dict(Counter(c.status for c in claims)),
+        fraud_flagged=sum(1 for r in results if r["fraud"]["flagged"]),
+        avg_pipeline_seconds=round(sum(secs) / len(secs), 3) if secs else None,
+        index_size=pipe.index.count(),
+        approved_value_pkr=sum(c.final_cost_pkr or 0 for c in claims if c.status == "approved"),
+        damage_mix=dict(Counter(a["detection"]["damage_type"] for r in results for a in r["assessments"])),
+        model_versions={"detector": pipe.detector.version, "embedder": pipe.embedder.version},
+    )
+
+
+@app.get("/claims/{claim_id}/images/{name}")
+def claim_image(
+    claim_id: str, name: str, settings: Settings = Depends(get_settings), session=Depends(_session)
+):
+    claim = session.get(Claim, claim_id)
+    key = f"{claim_id}/{name}"
+    if claim is None or key not in (claim.image_keys or []):
+        raise HTTPException(404, "image not found")
+    data = get_storage(settings).load(key)
+    media = mimetypes.guess_type(name)[0] or "image/jpeg"
+    return Response(data, media_type=media, headers={"Cache-Control": "private, max-age=86400"})
+
+
 @app.get("/claims/{claim_id}", response_model=ClaimOut)
 def get_claim(claim_id: str, session=Depends(_session)):
     claim = session.get(Claim, claim_id)
@@ -131,7 +218,9 @@ def review_claim(claim_id: str, review: ReviewIn, session=Depends(_session)):
         final = review.final_cost_pkr or (result.total_low_pkr + result.total_high_pkr) / 2
         get_pipeline().learn_from_review(result, final)
         claim.status = ClaimStatus.approved.value
+        claim.final_cost_pkr = round(final, -2)
     else:
         claim.status = ClaimStatus.declined.value
+    claim.reviewed_at = datetime.now(UTC)
     session.commit()
     return _out(claim)

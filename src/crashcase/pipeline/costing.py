@@ -57,6 +57,7 @@ def estimate(
         costs, weights = [], []
         for s in similar:
             ref = table.base_cost(s.damage_type, s.part, s.severity, s.car_category)
+            s.adjusted_cost_pkr = round(s.cost_pkr * target / ref, -2)
             costs.append(s.cost_pkr * target / ref)
             weights.append(max(s.similarity, 0.01))
         costs_a, w = np.array(costs), np.array(weights)

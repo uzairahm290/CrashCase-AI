@@ -25,6 +25,11 @@ from crashcase.storage import get_storage
 log = logging.getLogger(__name__)
 
 
+def _display(name: str) -> str:
+    """Stored names are "<index>_<original>"; show the original file name."""
+    return name.split("_", 1)[1] if "_" in name and name.split("_", 1)[0].isdigit() else name
+
+
 @contextmanager
 def _stage(name: str):
     start = time.perf_counter()
@@ -84,11 +89,17 @@ class Pipeline:
 
         with _stage("fraud"):
             hashes = [fraud.dhash(img) for img in images.values()]
-            reasons = [
-                f"photo matches an image from earlier claim {cid} (distance {d})"
-                for cid, d in fraud.find_duplicates(hashes, known, s.duplicate_hash_distance)
+            reasons = []
+            for name, h in zip(images, hashes, strict=True):
+                for cid, _ in fraud.find_duplicates([h], known, s.duplicate_hash_distance):
+                    reasons.append(
+                        f"Photo {_display(name)} is the same photo as one in claim {cid[:8].upper()}"
+                    )
+            reasons += [
+                f"Photo {_display(name)} was edited in {tool.title()}"
+                for name, tool in edited.items()
+                if tool
             ]
-            reasons += [f"{name} was edited with {tool}" for name, tool in edited.items() if tool]
         fraud_check = FraudCheck(flagged=bool(reasons), reasons=reasons)
         if fraud_check.flagged:
             metrics.FRAUD_FLAGS.inc()

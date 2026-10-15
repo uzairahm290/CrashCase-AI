@@ -1,0 +1,320 @@
+.page {
+  max-width: 1440px;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.crumb {
+  margin-bottom: 4px;
+  color: var(--steel);
+  font-size: var(--t-sm);
+}
+
+.crumb a {
+  color: var(--steel);
+}
+
+.fraud {
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  border-radius: var(--radius-m);
+  background: var(--alert);
+  color: #fff;
+}
+
+.fraud ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(360px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.left,
+.right {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.right {
+  position: sticky;
+  top: 16px;
+}
+
+.assessing {
+  padding: 22px;
+}
+
+.steps {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.steps li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  counter-increment: step;
+  color: var(--steel);
+}
+
+.steps li::before {
+  content: counter(step);
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: 50%;
+  font-size: var(--t-sm);
+  font-weight: 700;
+}
+
+.steps li[data-state="done"] {
+  color: var(--ink);
+}
+
+.steps li[data-state="done"]::before {
+  content: "✓";
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+
+.steps li[data-state="now"] {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.steps li[data-state="now"]::before {
+  border-color: var(--marker);
+  background: var(--marker);
+  color: var(--ink);
+  animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.total {
+  padding: 20px 22px;
+}
+
+.big {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 12px;
+  margin: 8px 0 6px;
+  font-size: var(--t-3xl);
+}
+
+.to {
+  font-size: var(--t-lg);
+  font-weight: 500;
+  font-stretch: 100%;
+  color: var(--steel);
+}
+
+.bigNone {
+  margin: 8px 0 0;
+  font-size: var(--t-xl);
+  font-weight: 700;
+}
+
+.jobs {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.job {
+  padding: 14px 16px 12px;
+  transition: border-color 0.15s;
+}
+
+.job[data-on] {
+  border-color: var(--marker);
+  box-shadow: inset 4px 0 0 var(--marker);
+}
+
+.jobHead {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.jobNum {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--marker);
+  font-weight: 800;
+}
+
+.jobTitle {
+  display: grid;
+}
+
+.jobTitle .muted {
+  font-size: var(--t-sm);
+}
+
+.jobCost {
+  font-weight: 750;
+  font-stretch: 112%;
+  white-space: nowrap;
+}
+
+.sev {
+  height: 4px;
+  margin: 10px 0 8px 42px;
+  border-radius: 2px;
+  background: #e6eaef;
+}
+
+.sev span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--ink);
+}
+
+.decision {
+  display: grid;
+  gap: 12px;
+  padding: 20px 22px;
+  border: 1.5px solid var(--ink);
+}
+
+.amount {
+  display: grid;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.amount input {
+  padding: 10px 12px;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: var(--radius-s);
+  font-size: var(--t-xl);
+  font-weight: 750;
+  font-stretch: 115%;
+}
+
+.amount input:focus {
+  border-color: var(--ink);
+  outline: none;
+}
+
+.warn {
+  padding: 8px 12px;
+  border-radius: var(--radius-s);
+  background: var(--marker-wash);
+  color: var(--marker-ink);
+  font-size: var(--t-sm);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.decided {
+  padding: 12px 14px;
+  border-radius: var(--radius-m);
+  background: var(--ok-wash);
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.report {
+  padding: 18px 22px;
+}
+
+.reportHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.reportBody {
+  max-width: 72ch;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.how {
+  color: var(--steel);
+  font-size: var(--t-sm);
+}
+
+.how summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.how dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 16px;
+  margin: 10px 0 0;
+}
+
+.how dt {
+  font-weight: 600;
+}
+
+.how dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1080px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  /* One column: photo, then estimate and decision, then the long report. */
+  .left {
+    display: contents;
+  }
+  .right {
+    position: static;
+    order: 1;
+  }
+  .report {
+    order: 2;
+  }
+}

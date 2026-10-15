@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, Field
@@ -55,6 +56,9 @@ class SimilarClaim(BaseModel):
     severity: float
     cost_pkr: float
     similarity: float
+    adjusted_cost_pkr: float | None = Field(
+        default=None, description="This claim's price transferred to the current case"
+    )
 
 
 class DamageAssessment(BaseModel):
@@ -90,8 +94,36 @@ class ClaimResult(BaseModel):
 class ClaimOut(BaseModel):
     claim_id: str
     status: ClaimStatus
+    car_category: str
+    images: list[str]
+    created_at: datetime
     result: ClaimResult | None = None
     error: str | None = None
+    final_cost_pkr: float | None = None
+
+
+class ClaimSummary(BaseModel):
+    claim_id: str
+    status: ClaimStatus
+    car_category: str
+    created_at: datetime
+    images: list[str]
+    damage_count: int
+    total_low_pkr: float | None = None
+    total_high_pkr: float | None = None
+    fraud_flagged: bool = False
+    final_cost_pkr: float | None = None
+
+
+class Stats(BaseModel):
+    claims_total: int
+    by_status: dict[str, int]
+    fraud_flagged: int
+    avg_pipeline_seconds: float | None
+    index_size: int
+    approved_value_pkr: float
+    damage_mix: dict[str, int]
+    model_versions: dict[str, str]
 
 
 class ReviewIn(BaseModel):

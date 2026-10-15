@@ -40,7 +40,8 @@ def test_full_claim_flow(settings):
         # Same photo again in a new claim -> duplicate-photo fraud flag
         r2 = c.post("/claims", files=_files(make_image(10)), data={"car_category": "sedan"})
         fraud = r2.json()["result"]["fraud"]
-        assert fraud["flagged"] and claim_id in fraud["reasons"][0]
+        assert fraud["flagged"] and claim_id[:8].upper() in fraud["reasons"][0]
+        assert fraud["reasons"][0].startswith("Photo img0.jpg is the same photo")
 
 
 def test_review_feeds_index(settings):
@@ -72,3 +73,21 @@ def test_validation(settings):
         bad = [("files", ("x.jpg", b"not an image", "image/jpeg"))]
         assert c.post("/claims", files=bad, data={"car_category": "sedan"}).status_code == 422
         assert c.get("/claims/nope").status_code == 404
+
+
+def test_list_stats_and_images(settings):
+    with _client() as c:
+        body = c.post("/claims", files=_files(make_image(50)), data={"car_category": "sedan"}).json()
+        cid, name = body["claim_id"], body["images"][0]
+        listed = c.get("/claims").json()
+        assert listed[0]["claim_id"] == cid and listed[0]["damage_count"] == 1
+        assert c.get("/claims", params={"status": "approved"}).json() == []
+
+        img = c.get(f"/claims/{cid}/images/{name}")
+        assert img.status_code == 200 and img.headers["content-type"] == "image/jpeg"
+        assert c.get(f"/claims/{cid}/images/../../etc").status_code == 404
+
+        c.post(f"/claims/{cid}/review", json={"approved": True, "final_cost_pkr": 41234})
+        s = c.get("/stats").json()
+        assert s["claims_total"] == 1 and s["by_status"] == {"approved": 1}
+        assert s["approved_value_pkr"] == 41200 and s["index_size"] > 1000

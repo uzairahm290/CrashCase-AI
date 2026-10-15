@@ -1,0 +1,134 @@
+.stage {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--radius-m);
+  background: var(--lightbox);
+}
+
+.frame {
+  display: grid;
+  place-items: center;
+  min-height: 320px;
+}
+
+.photo {
+  position: relative;
+  max-width: 100%;
+  line-height: 0;
+}
+
+.photo img {
+  display: block;
+  max-width: 100%;
+  max-height: 62vh;
+  border-radius: var(--radius-s);
+}
+
+.box {
+  position: absolute;
+  padding: 0;
+  border: 2.5px solid var(--marker);
+  border-radius: 3px;
+  background: transparent;
+  box-shadow: 0 0 0 1px rgba(15, 26, 44, 0.55);
+  cursor: pointer;
+  transition: opacity 0.15s, background-color 0.15s;
+}
+
+.box:hover,
+.box[data-on] {
+  background: rgba(242, 194, 48, 0.16);
+}
+
+.box[data-dim] {
+  opacity: 0.35;
+}
+
+.num {
+  position: absolute;
+  top: -14px;
+  left: -14px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--marker);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.rejected {
+  position: absolute;
+  inset: auto 12px 12px 12px;
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: var(--radius-s);
+  background: rgba(200, 55, 45, 0.92);
+  color: #fff;
+  line-height: 1.35;
+}
+
+.strip {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+}
+
+.thumb {
+  position: relative;
+  display: block;
+  width: 84px;
+  height: 62px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--radius-s);
+  background: none;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.thumb[aria-current] {
+  border-color: var(--marker);
+  opacity: 1;
+}
+
+.thumb:hover {
+  opacity: 1;
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+.tag,
+.tagBad {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 18px;
+}
+
+.tag {
+  background: var(--marker);
+  color: var(--ink);
+}
+
+.tagBad {
+  background: var(--alert);
+  color: #fff;
+}
