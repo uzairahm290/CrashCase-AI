@@ -39,15 +39,14 @@ MAX_BYTES = 10 * 1024 * 1024
 async def lifespan(app: FastAPI):
     settings = get_settings()
     get_sessionmaker(settings)  # creates tables
-    if settings.index_backend == "memory":
-        # Dev convenience: an in-memory index starts empty, so fill it with synthetic claims.
+    if settings.auto_seed:
         from crashcase.pipeline.run import get_pipeline
         from crashcase.seed import synthetic_claims
 
         pipe = get_pipeline()
         if pipe.index.count() == 0:
             pipe.index.add(synthetic_claims(pipe.costs, 20, pipe.embedder.dim, pipe.embedder.version))
-            log.info("seeded in-memory index with %d synthetic claims", pipe.index.count())
+            log.info("seeded claim index with %d synthetic claims", pipe.index.count())
     yield
 
 

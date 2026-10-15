@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     # When true, claims are processed inside the API request (tests / local dev without a worker)
     inline_processing: bool = False
     cors_origins: str = "http://localhost:3000"
+    # Fill an empty claim index with synthetic claims at API start-up. Turn off when several
+    # API replicas start together (ECS); seed once with scripts/seed_claims.py instead.
+    auto_seed: bool = True
 
     # Storage: "local" or "s3"
     storage_backend: str = "local"
