@@ -1,0 +1,102 @@
+# Local stack: docker compose up --build
+#   API          http://localhost:8000/docs
+#   MLflow       http://localhost:5000
+#   Prometheus   http://localhost:9090
+#   Grafana      http://localhost:3000  (admin / $GRAFANA_PASSWORD)
+
+x-app: &app
+  build:
+    context: .
+    dockerfile: docker/Dockerfile
+    args:
+      INSTALL_ML: ${INSTALL_ML:-false}
+  image: crashcase:${IMAGE_TAG:-dev}
+  env_file:
+    - path: .env
+      required: false
+  environment: &app-env
+    CC_DATABASE_URL: postgresql+psycopg2://crashcase:${POSTGRES_PASSWORD:-crashcase}@postgres:5432/crashcase
+    CC_REDIS_URL: redis://redis:6379/0
+    CC_INDEX_BACKEND: pgvector
+    CC_UPLOAD_DIR: /app/data/uploads
+  volumes:
+    - uploads:/app/data/uploads
+    - ./models:/app/models:ro
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  api:
+    <<: *app
+    ports: ["8000:8000"]
+
+  worker:
+    <<: *app
+    command: celery -A crashcase.worker.tasks worker --pool=threads --concurrency=2 --loglevel=info
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:9100/metrics"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+
+  seed:
+    <<: *app
+    command: python scripts/seed_claims.py --per-group 20
+    restart: "no"
+    profiles: ["seed"]
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: crashcase
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crashcase}
+      POSTGRES_DB: crashcase
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crashcase"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.14.1
+    command: >
+      mlflow server --host 0.0.0.0 --port 5000
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --artifacts-destination /mlflow/artifacts
+    ports: ["5000:5000"]
+    volumes:
+      - mlflow:/mlflow
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports: ["9090:9090"]
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["3000:3000"]
+    depends_on: [prometheus]
+
+volumes:
+  uploads:
+  pgdata:
+  mlflow:

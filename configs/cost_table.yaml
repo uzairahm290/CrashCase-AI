@@ -1,0 +1,34 @@
+# Synthetic repair-cost model used to (1) generate the synthetic claims database and
+# (2) fall back on when retrieval finds no similar claims.
+# Prices are rough Pakistani workshop figures in PKR for a mid-range car. Replace with real
+# insurer data when available; nothing else in the code depends on these exact numbers.
+
+replace_part_pkr:          # cost of a new part, fitted
+  front_bumper: 45000
+  rear_bumper: 40000
+  door: 85000
+  hood: 70000
+  fender: 35000
+  headlight: 30000
+  taillight: 18000
+  windshield: 40000
+  tire: 22000
+  unknown: 40000
+
+repair_fraction:           # repair cost as a share of replacement cost, at full severity
+  dent: 0.55
+  scratch: 0.30
+  crack: 0.65
+  glass_shatter: 1.00      # glass is always replaced
+  lamp_broken: 1.00
+  tire_flat: 0.15
+
+category_multiplier:
+  hatchback: 0.8
+  sedan: 1.0
+  suv: 1.4
+
+always_replace: [glass_shatter, lamp_broken]
+replace_above_severity: 0.45
+labour_pkr: 3000           # fixed labour per damaged part
+noise_std: 0.12            # relative spread used when generating synthetic claims

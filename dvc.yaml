@@ -1,0 +1,23 @@
+# dvc repro   -> converts CarDD and trains, re-running only what changed.
+# Data lives in an S3 remote:  dvc remote add -d s3 s3://<bucket>/dvc
+stages:
+  prepare:
+    cmd: python training/prepare_cardd.py --src datasets/CarDD_COCO --out datasets/cardd_yolo
+    deps:
+      - training/prepare_cardd.py
+      - datasets/CarDD_COCO
+    outs:
+      - datasets/cardd_yolo
+
+  train:
+    cmd: python training/train.py
+    deps:
+      - training/train.py
+      - datasets/cardd_yolo
+    params:
+      - train
+    outs:
+      - models/damage-seg.pt
+    metrics:
+      - metrics.json:
+          cache: false

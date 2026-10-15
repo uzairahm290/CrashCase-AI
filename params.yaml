@@ -1,0 +1,10 @@
+train:
+  model: yolov8n-seg.pt        # small on purpose: accuracy is not the goal, deployment is
+  data: datasets/cardd_yolo/data.yaml
+  epochs: 15
+  imgsz: 640
+  batch: 16
+  seed: 0
+  experiment: crashcase-damage-seg
+  registered_model: crashcase-damage-seg
+  run_name: yolov8n-seg-baseline
