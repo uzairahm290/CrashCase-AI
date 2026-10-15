@@ -26,6 +26,22 @@ def clean(key: str) -> str:
     return re.sub(r"[^\w\-./ ]", "_", key).strip("_")
 
 
+def register(name: str, run):
+    """Register the run's weights folder. Works on MLflow 2 and 3 (3 rejects register_model on
+    plain artifacts, but create_model_version with an explicit source is fine on both)."""
+    from mlflow import MlflowClient
+    from mlflow.exceptions import MlflowException
+
+    client = MlflowClient()
+    try:
+        client.create_registered_model(name)
+    except MlflowException:
+        pass  # already exists
+    return client.create_model_version(
+        name=name, source=f"{run.info.artifact_uri}/weights", run_id=run.info.run_id
+    )
+
+
 def main() -> None:
     params = yaml.safe_load(Path("params.yaml").read_text())["train"]
     yolo_settings.update({"mlflow": False})  # we log explicitly below
@@ -59,8 +75,8 @@ def main() -> None:
         for plot in Path("runs/damage-seg").glob("*.png"):
             mlflow.log_artifact(str(plot), artifact_path="plots")
 
-        # Register so the deploy pipeline can promote it (Staging -> Production).
-        mv = mlflow.register_model(f"runs:/{run.info.run_id}/weights", params["registered_model"])
+        # Register so the retrain flow's gate can promote it to the "champion" alias.
+        mv = register(params["registered_model"], run)
         print(f"registered {params['registered_model']} version {mv.version}")
 
         Path("metrics.json").write_text(json.dumps(metrics, indent=2))  # for `dvc metrics show`

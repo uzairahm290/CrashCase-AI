@@ -4,6 +4,8 @@
 
 FROM python:3.11-slim AS builder
 ARG INSTALL_ML=false
+# Extra optional dependency groups, e.g. "flows" for the Prefect runner image
+ARG EXTRAS=""
 ENV PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
 WORKDIR /build
 COPY pyproject.toml ./
@@ -12,9 +14,9 @@ RUN python -m venv /opt/venv \
  && /opt/venv/bin/pip install --upgrade pip \
  && if [ "$INSTALL_ML" = "true" ]; then \
       /opt/venv/bin/pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu \
-      && /opt/venv/bin/pip install ".[ml]"; \
+      && /opt/venv/bin/pip install ".[ml${EXTRAS:+,$EXTRAS}]"; \
     else \
-      /opt/venv/bin/pip install .; \
+      /opt/venv/bin/pip install ".${EXTRAS:+[$EXTRAS]}"; \
     fi
 
 FROM python:3.11-slim AS runtime
@@ -27,6 +29,8 @@ ENV PATH="/opt/venv/bin:$PATH" PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 WORKDIR /app
 COPY configs ./configs
 COPY scripts ./scripts
+COPY training ./training
+COPY params.yaml dvc.yaml ./
 RUN mkdir -p /app/data/uploads /app/models && chown -R app:app /app
 USER app
 EXPOSE 8000 9100

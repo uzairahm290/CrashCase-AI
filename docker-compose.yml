@@ -62,6 +62,30 @@ services:
     restart: "no"
     profiles: ["seed"]
 
+  # --- MLOps profile: docker compose --profile mlops up ---------------------------------
+  prefect:
+    image: prefecthq/prefect:3-python3.11
+    command: prefect server start --host 0.0.0.0
+    ports: ["4200:4200"]
+    profiles: ["mlops"]
+
+  flows:
+    <<: *app
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        INSTALL_ML: "true"
+        EXTRAS: flows
+    image: crashcase-flows:${IMAGE_TAG:-dev}
+    command: python -m crashcase.flows.serve
+    environment:
+      <<: *app-env
+      PREFECT_API_URL: http://prefect:4200/api
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    profiles: ["mlops"]
+    depends_on: [prefect, postgres, mlflow]
+
   postgres:
     image: pgvector/pgvector:pg16
     environment:
