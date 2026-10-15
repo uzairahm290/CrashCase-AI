@@ -26,6 +26,7 @@ class Settings(BaseSettings):
 
     # Models: "stub" works with no weights; "yolo" needs trained weights
     detector_backend: str = "stub"
+    # Local path, or an MLflow URI such as models:/crashcase-damage-seg@champion
     damage_weights: str = "models/damage-seg.pt"
     parts_weights: str = ""
     embedder_backend: str = "histogram"  # "histogram" or "clip"

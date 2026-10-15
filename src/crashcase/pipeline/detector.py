@@ -49,12 +49,29 @@ class StubDetector:
         ]
 
 
+def resolve_weights(uri: str) -> str:
+    """Local path as-is; "models:/name@champion" or "runs:/..." is downloaded from MLflow."""
+    if not uri.startswith(("models:/", "runs:/")):
+        return uri
+    from pathlib import Path
+
+    import mlflow
+
+    local = Path(mlflow.artifacts.download_artifacts(artifact_uri=uri))
+    if local.is_file():
+        return str(local)
+    weights = sorted(local.rglob("*.pt"))
+    if not weights:
+        raise FileNotFoundError(f"no .pt file under {uri}")
+    return str(weights[0])
+
+
 class YoloDetector:
     def __init__(self, damage_weights: str, parts_weights: str = "", conf: float = 0.25):
         from ultralytics import YOLO
 
-        self.damage_model = YOLO(damage_weights)
-        self.parts_model = YOLO(parts_weights) if parts_weights else None
+        self.damage_model = YOLO(resolve_weights(damage_weights))
+        self.parts_model = YOLO(resolve_weights(parts_weights)) if parts_weights else None
         self.conf = conf
         self.version = f"yolo:{damage_weights}" + (f"+{parts_weights}" if parts_weights else "")
 
