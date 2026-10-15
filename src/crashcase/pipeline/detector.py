@@ -119,7 +119,29 @@ class YoloDetector:
         return out
 
 
+class BentoDetector:
+    """Client for the BentoML detector service (serving/service.py)."""
+
+    def __init__(self, url: str, timeout: float = 60):
+        import httpx
+
+        self.url = url.rstrip("/")
+        self.http = httpx.Client(timeout=timeout)
+        self.version = "bento:" + self.http.post(f"{self.url}/version", json={}).text.strip().strip('"')
+
+    def detect(self, image: Image.Image) -> list[Detection]:
+        import io
+
+        buf = io.BytesIO()
+        image.convert("RGB").save(buf, "JPEG", quality=92)
+        r = self.http.post(f"{self.url}/detect", files={"image": ("image.jpg", buf.getvalue(), "image/jpeg")})
+        r.raise_for_status()
+        return [Detection(**d) for d in r.json()]
+
+
 def build_detector(settings: Settings) -> Detector:
+    if settings.detector_backend == "bento":
+        return BentoDetector(settings.bento_url)
     if settings.detector_backend == "yolo":
         return YoloDetector(settings.damage_weights, settings.parts_weights)
     return StubDetector()

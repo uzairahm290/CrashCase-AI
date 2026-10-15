@@ -1,0 +1,19 @@
+# bentoml build -f serving/bentofile.yaml && bentoml containerize crashcase-detector:latest
+service: "serving.service:DamageDetector"
+labels:
+  project: crashcase-ai
+include:
+  - "serving/*.py"
+  - "src/crashcase/**/*.py"
+  - "configs/**"
+python:
+  packages:
+    - pillow
+    - numpy
+    - pydantic-settings
+    - pyyaml
+    - ultralytics
+    - mlflow
+envs:
+  - name: PYTHONPATH
+    value: src

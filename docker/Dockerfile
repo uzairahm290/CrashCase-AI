@@ -30,6 +30,7 @@ WORKDIR /app
 COPY configs ./configs
 COPY scripts ./scripts
 COPY training ./training
+COPY serving ./serving
 COPY params.yaml dvc.yaml ./
 RUN mkdir -p /app/data/uploads /app/models && chown -R app:app /app
 USER app

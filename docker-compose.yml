@@ -86,6 +86,26 @@ services:
     profiles: ["mlops"]
     depends_on: [prefect, postgres, mlflow]
 
+  # --- Detector as its own BentoML service: docker compose --profile bento up ------------
+  # Then point workers at it: CC_DETECTOR_BACKEND=bento CC_BENTO_URL=http://detector:3005
+  detector:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        INSTALL_ML: "true"
+        EXTRAS: serving
+    image: crashcase-detector:${IMAGE_TAG:-dev}
+    command: bentoml serve serving.service:DamageDetector --host 0.0.0.0 --port 3005
+    environment:
+      CC_DETECTOR_BACKEND: ${DETECTOR_MODEL:-stub}
+      CC_DAMAGE_WEIGHTS: ${DAMAGE_WEIGHTS:-models/damage-seg.pt}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    volumes:
+      - ./models:/app/models:ro
+    ports: ["3005:3005"]
+    profiles: ["bento"]
+
   postgres:
     image: pgvector/pgvector:pg16
     environment:

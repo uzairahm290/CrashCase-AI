@@ -24,8 +24,10 @@ class Settings(BaseSettings):
     upload_dir: Path = Path("./data/uploads")
     s3_bucket: str = ""
 
-    # Models: "stub" works with no weights; "yolo" needs trained weights
+    # Models: "stub" works with no weights; "yolo" needs trained weights;
+    # "bento" calls the BentoML detector service at bento_url
     detector_backend: str = "stub"
+    bento_url: str = "http://localhost:3005"
     # Local path, or an MLflow URI such as models:/crashcase-damage-seg@champion
     damage_weights: str = "models/damage-seg.pt"
     parts_weights: str = ""
