@@ -1,0 +1,22 @@
+<!-- Label Studio project config for CrashCase AI damage labelling.
+     Pre-annotations arrive as rectangles; draw polygons for exact masks where it matters. -->
+<View>
+  <Image name="image" value="$image" zoom="true"/>
+  <Header value="Outline each damaged area"/>
+  <PolygonLabels name="damage" toName="image" strokeWidth="2">
+    <Label value="dent" background="#F2C230"/>
+    <Label value="scratch" background="#4C9AFF"/>
+    <Label value="crack" background="#C8372D"/>
+    <Label value="glass_shatter" background="#7B61FF"/>
+    <Label value="lamp_broken" background="#2F7A4F"/>
+    <Label value="tire_flat" background="#5B6B80"/>
+  </PolygonLabels>
+  <RectangleLabels name="damage_box" toName="image">
+    <Label value="dent" background="#F2C230"/>
+    <Label value="scratch" background="#4C9AFF"/>
+    <Label value="crack" background="#C8372D"/>
+    <Label value="glass_shatter" background="#7B61FF"/>
+    <Label value="lamp_broken" background="#2F7A4F"/>
+    <Label value="tire_flat" background="#5B6B80"/>
+  </RectangleLabels>
+</View>

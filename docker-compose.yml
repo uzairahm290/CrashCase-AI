@@ -86,6 +86,13 @@ services:
     profiles: ["mlops"]
     depends_on: [prefect, postgres, mlflow]
 
+  label-studio:
+    image: heartexlabs/label-studio:1.13.1
+    ports: ["8081:8080"]
+    volumes:
+      - labelstudio:/label-studio/data
+    profiles: ["mlops"]
+
   # --- Detector as its own BentoML service: docker compose --profile bento up ------------
   # Then point workers at it: CC_DETECTOR_BACKEND=bento CC_BENTO_URL=http://detector:3005
   detector:
@@ -155,6 +162,7 @@ services:
     depends_on: [prometheus]
 
 volumes:
+  labelstudio:
   uploads:
   pgdata:
   mlflow:
