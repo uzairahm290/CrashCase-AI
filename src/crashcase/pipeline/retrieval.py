@@ -24,6 +24,9 @@ class PastClaim:
     source: str = "synthetic"  # "synthetic" | "approved"
     embedder_version: str = ""
     ref: str = field(default_factory=lambda: f"PC-{uuid.uuid4().hex[:8]}")
+    # Where the embedding came from, so it can be recomputed when the embedder changes
+    image_key: str | None = None
+    bbox: list[float] | None = None
 
 
 class ClaimIndex(Protocol):
@@ -32,6 +35,8 @@ class ClaimIndex(Protocol):
         self, embedding: np.ndarray, damage_type: str, car_category: str, part: str | None, k: int
     ) -> list[SimilarClaim]: ...
     def count(self) -> int: ...
+    def stale(self, embedder_version: str) -> list[PastClaim]: ...
+    def remove(self, refs: list[str]) -> None: ...
 
 
 def _to_similar(c: PastClaim, sim: float) -> SimilarClaim:
@@ -58,6 +63,14 @@ class InMemoryIndex:
     def count(self) -> int:
         return len(self._items)
 
+    def stale(self, embedder_version):
+        return [c for c in self._items if c.embedder_version != embedder_version]
+
+    def remove(self, refs):
+        drop = set(refs)
+        with self._lock:
+            self._items = [c for c in self._items if c.ref not in drop]
+
     def search(self, embedding, damage_type, car_category, part, k):
         pool = [c for c in self._items if c.damage_type == damage_type and c.car_category == car_category]
         if part and part != "unknown":
@@ -77,7 +90,7 @@ class PgVectorIndex:
 
     def __init__(self, database_url: str, dim: int):
         from pgvector.sqlalchemy import Vector
-        from sqlalchemy import Column, Float, MetaData, String, Table, create_engine, text
+        from sqlalchemy import JSON, Column, Float, MetaData, String, Table, create_engine, text
 
         self.engine = create_engine(database_url, pool_pre_ping=True)
         with self.engine.begin() as conn:
@@ -93,10 +106,15 @@ class PgVectorIndex:
             Column("severity", Float),
             Column("cost_pkr", Float),
             Column("source", String(16)),
-            Column("embedder_version", String(64)),
+            Column("embedder_version", String(64), index=True),
+            Column("image_key", String(200), nullable=True),
+            Column("bbox", JSON, nullable=True),
             Column("embedding", Vector(dim)),
         )
         meta.create_all(self.engine)
+        with self.engine.begin() as conn:  # tables created before these columns existed
+            conn.execute(text("ALTER TABLE past_claims ADD COLUMN IF NOT EXISTS image_key VARCHAR(200)"))
+            conn.execute(text("ALTER TABLE past_claims ADD COLUMN IF NOT EXISTS bbox JSON"))
 
     def add(self, claims: list[PastClaim]) -> None:
         if not claims:
@@ -111,6 +129,8 @@ class PgVectorIndex:
                 "cost_pkr": c.cost_pkr,
                 "source": c.source,
                 "embedder_version": c.embedder_version,
+                "image_key": c.image_key,
+                "bbox": c.bbox,
                 "embedding": c.embedding.tolist(),
             }
             for c in claims
@@ -123,6 +143,36 @@ class PgVectorIndex:
 
         with self.engine.connect() as conn:
             return conn.execute(select(func.count()).select_from(self.table)).scalar_one()
+
+    def stale(self, embedder_version):
+        from sqlalchemy import select
+
+        t = self.table
+        q = select(t).where(t.c.embedder_version != embedder_version)
+        with self.engine.connect() as conn:
+            rows = conn.execute(q).all()
+        return [
+            PastClaim(
+                damage_type=r.damage_type,
+                part=r.part,
+                car_category=r.car_category,
+                severity=r.severity,
+                cost_pkr=r.cost_pkr,
+                embedding=np.asarray(r.embedding, dtype=np.float32),
+                source=r.source,
+                embedder_version=r.embedder_version,
+                ref=r.ref,
+                image_key=r.image_key,
+                bbox=r.bbox,
+            )
+            for r in rows
+        ]
+
+    def remove(self, refs):
+        if not refs:
+            return
+        with self.engine.begin() as conn:
+            conn.execute(self.table.delete().where(self.table.c.ref.in_(list(refs))))
 
     def _query(self, embedding, damage_type, car_category, part, k):
         from sqlalchemy import select

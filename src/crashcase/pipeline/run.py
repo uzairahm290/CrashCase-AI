@@ -139,7 +139,8 @@ class Pipeline:
         scale = final_total / est_total
         new = []
         for a in result.assessments:
-            img = Image.open(io.BytesIO(self.storage.load(f"{result.claim_id}/{a.image}")))
+            key = f"{result.claim_id}/{a.image}"
+            img = Image.open(io.BytesIO(self.storage.load(key))).convert("RGB")
             new.append(
                 PastClaim(
                     damage_type=a.detection.damage_type,
@@ -150,6 +151,8 @@ class Pipeline:
                     embedding=self.embedder.embed(crop(img, a.detection.bbox)),
                     source="approved",
                     embedder_version=self.embedder.version,
+                    image_key=key,
+                    bbox=a.detection.bbox,
                 )
             )
         self.index.add(new)
