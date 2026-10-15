@@ -19,7 +19,8 @@ from prefect import flow, get_run_logger, task
 
 MODEL = os.getenv("CC_REGISTERED_MODEL", "crashcase-damage-seg")
 GATE_METRIC = "metrics/mAP50-95_M"
-REPO_ROOT = Path(__file__).resolve().parents[3]
+# Where training/, params.yaml and dvc.yaml live: the working directory (/app in the image).
+REPO_ROOT = Path(os.getenv("CC_REPO_ROOT", Path.cwd()))
 
 
 def _run(cmd: list[str]) -> None:
