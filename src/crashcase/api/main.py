@@ -18,13 +18,14 @@ from sqlalchemy import select, text
 
 from crashcase import __version__
 from crashcase.config import Settings, get_settings
-from crashcase.db import Claim, get_sessionmaker
+from crashcase.db import Claim, DriftReport, get_sessionmaker
 from crashcase.schemas import (
     CAR_CATEGORIES,
     ClaimOut,
     ClaimResult,
     ClaimStatus,
     ClaimSummary,
+    DriftOut,
     ReviewIn,
     Stats,
 )
@@ -223,3 +224,49 @@ def review_claim(claim_id: str, review: ReviewIn, session=Depends(_session)):
     claim.reviewed_at = datetime.now(UTC)
     session.commit()
     return _out(claim)
+
+
+def _drift_out(r: DriftReport) -> DriftOut:
+    return DriftOut(
+        id=r.id,
+        created_at=r.created_at,
+        status=r.status,
+        drift_share=r.drift_share,
+        drifted_columns=r.drifted_columns or [],
+        n_reference=r.n_reference,
+        n_current=r.n_current,
+        has_report=bool(r.report_key),
+        summary=r.summary or {},
+    )
+
+
+@app.get("/drift", response_model=DriftOut | None)
+def latest_drift(session=Depends(_session)):
+    row = session.scalars(select(DriftReport).order_by(DriftReport.id.desc()).limit(1)).first()
+    return _drift_out(row) if row else None
+
+
+@app.post("/drift/run", response_model=DriftOut)
+def run_drift(
+    current_days: int = Query(7, ge=1, le=90),
+    settings: Settings = Depends(get_settings),
+    session=Depends(_session),
+):
+    """Run a drift check now. Prefect also runs this daily (flows/drift_flow.py)."""
+    from crashcase.monitoring.drift import run_drift_check
+
+    return _drift_out(run_drift_check(session, settings, current_days=current_days))
+
+
+@app.get("/drift/{report_id}/report")
+def drift_report(
+    report_id: int,
+    part: str = Query("damage", pattern="^(damage|photos)$"),
+    settings: Settings = Depends(get_settings),
+    session=Depends(_session),
+):
+    row = session.get(DriftReport, report_id)
+    if row is None or not row.report_key:
+        raise HTTPException(404, "report not found")
+    key = row.report_key if part == "damage" else row.report_key.replace("-damage.html", "-photos.html")
+    return Response(get_storage(settings).load(key), media_type="text/html")

@@ -131,3 +131,15 @@ class ReviewIn(BaseModel):
     final_cost_pkr: float | None = Field(
         default=None, description="Adjuster's final total; defaults to the midpoint estimate"
     )
+
+
+class DriftOut(BaseModel):
+    id: int
+    created_at: datetime
+    status: str
+    drift_share: float | None
+    drifted_columns: list[str]
+    n_reference: int
+    n_current: int
+    has_report: bool
+    summary: dict

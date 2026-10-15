@@ -49,6 +49,9 @@ class Settings(BaseSettings):
     llm_model: str = "llama-3.1-8b-instant"
     prompt_version: str = "v1"
 
+    # Drift: share of monitored columns that must drift before retraining is suggested
+    drift_share_threshold: float = 0.3
+
     cost_table_path: Path = Path("configs/cost_table.yaml")
     worker_metrics_port: int = 9100
 

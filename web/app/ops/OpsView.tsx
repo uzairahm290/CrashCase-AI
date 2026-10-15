@@ -4,6 +4,7 @@ import { useLoad } from "@/components/useLoad";
 import { api } from "@/lib/api";
 import { money, sentence, STATUS_TEXT } from "@/lib/format";
 import type { ClaimStatus } from "@/lib/api";
+import DriftPanel from "./DriftPanel";
 import styles from "./ops.module.css";
 
 type Link = { name: string; url: string; what: string };
@@ -101,6 +102,8 @@ export default function OpsView({ links }: { links: Link[] }) {
               </ul>
             )}
           </section>
+
+          <DriftPanel />
 
           <section className={`panel ${styles.block}`}>
             <h2>Models in production</h2>

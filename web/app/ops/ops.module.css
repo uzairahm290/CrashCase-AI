@@ -166,3 +166,38 @@
     border-bottom: 1px solid var(--rule);
   }
 }
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.blockHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.drift {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-left: 4px solid var(--ok);
+  border-radius: var(--radius-s);
+  background: var(--ok-wash);
+}
+
+.drift[data-state="drift"] {
+  border-left-color: var(--marker);
+  background: var(--marker-wash);
+}
+
+.driftHead {
+  font-weight: 650;
+}
+
+.reportLinks {
+  display: flex;
+  gap: 16px;
+  font-weight: 600;
+}

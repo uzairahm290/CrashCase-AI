@@ -44,6 +44,20 @@ class ImageHash(Base):
     dhash: Mapped[str] = mapped_column(String(64), index=True)
 
 
+class DriftReport(Base):
+    __tablename__ = "drift_reports"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    status: Mapped[str] = mapped_column(String(20), default="ok")  # ok | drift | not_enough_data
+    drift_share: Mapped[float | None] = mapped_column(Float, nullable=True)
+    drifted_columns: Mapped[list] = mapped_column(JSON, default=list)
+    n_reference: Mapped[int] = mapped_column(default=0)
+    n_current: Mapped[int] = mapped_column(default=0)
+    report_key: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    summary: Mapped[dict] = mapped_column(JSON, default=dict)
+
+
 _engines: dict[str, sessionmaker] = {}
 
 

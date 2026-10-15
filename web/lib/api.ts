@@ -96,6 +96,18 @@ export interface Stats {
   model_versions: Record<string, string>;
 }
 
+export interface Drift {
+  id: number;
+  created_at: string;
+  status: "ok" | "drift" | "not_enough_data";
+  drift_share: number | null;
+  drifted_columns: string[];
+  n_reference: number;
+  n_current: number;
+  has_report: boolean;
+  summary: Record<string, number>;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api${path}`, { cache: "no-store", ...init });
   if (!res.ok) {
@@ -126,5 +138,8 @@ export const api = {
       body: JSON.stringify({ approved, final_cost_pkr: finalCost ?? null }),
     }),
   stats: () => request<Stats>("/stats"),
+  drift: () => request<Drift | null>("/drift"),
+  runDrift: () => request<Drift>("/drift/run", { method: "POST" }),
+  driftReportUrl: (id: number, part: "damage" | "photos") => `/api/drift/${id}/report?part=${part}`,
   imageUrl: (id: string, name: string) => `/api/claims/${id}/images/${encodeURIComponent(name)}`,
 };
