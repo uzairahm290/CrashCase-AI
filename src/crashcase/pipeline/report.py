@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from pathlib import Path
 
 import httpx
@@ -65,32 +66,119 @@ def template_report(
     return "\n".join(lines)
 
 
-def llm_report(facts: dict, settings: Settings) -> str:
+REF = re.compile(r"PC-[0-9a-f]{8}")
+
+
+def citations_valid(text: str, facts: dict) -> tuple[bool, list[str]]:
+    """Faithfulness guard: every claim ref the report cites must be one we retrieved."""
+    known = {ref for d in facts["damages"] for ref in d["similar_claim_refs"]}
+    unknown = sorted(set(REF.findall(text)) - known)
+    return not unknown, unknown
+
+
+class _Tracer:
+    """Langfuse tracing when keys are set; a no-op otherwise."""
+
+    def __init__(self, settings: Settings):
+        self.client = None
+        if settings.langfuse_public_key and settings.langfuse_secret_key:
+            try:
+                from langfuse import Langfuse
+
+                self.client = Langfuse(
+                    public_key=settings.langfuse_public_key,
+                    secret_key=settings.langfuse_secret_key,
+                    host=settings.langfuse_host,
+                )
+            except Exception as exc:
+                log.warning("Langfuse disabled: %s", exc)
+
+    def start(self, facts: dict, settings: Settings, prompt: str):
+        if not self.client:
+            return None, None
+        trace = self.client.trace(
+            name="claim-report",
+            input=facts,
+            tags=[f"prompt:{settings.prompt_version}", f"car:{facts['car_category']}"],
+            metadata={"damages": len(facts["damages"]), "fraud": bool(facts["fraud_flags"])},
+        )
+        gen = trace.generation(
+            name="report",
+            model=settings.llm_model,
+            input=[{"role": "user", "content": prompt}],
+            model_parameters={"temperature": 0.2, "max_tokens": 500},
+            metadata={"prompt_version": settings.prompt_version},
+        )
+        return trace, gen
+
+
+_tracer: _Tracer | None = None
+
+
+def _get_tracer(settings: Settings) -> _Tracer:
+    global _tracer
+    if _tracer is None:
+        _tracer = _Tracer(settings)
+    return _tracer
+
+
+def render_prompt(facts: dict, settings: Settings) -> str:
     prompt = (PROMPT_DIR / f"{settings.prompt_version}.txt").read_text()
-    prompt = prompt.replace("{facts}", json.dumps(facts, indent=2))
-    resp = httpx.post(
-        f"{settings.llm_base_url}/chat/completions",
-        headers={"Authorization": f"Bearer {settings.llm_api_key}"},
-        json={
-            "model": settings.llm_model,
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.2,
-            "max_tokens": 500,
-        },
-        timeout=30,
-    )
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"].strip()
+    return prompt.replace("{facts}", json.dumps(facts, indent=2))
+
+
+def llm_report(facts: dict, settings: Settings) -> tuple[str, bool]:
+    """Return (text, citations_ok). Traced to Langfuse with token usage and a faithfulness score."""
+    prompt = render_prompt(facts, settings)
+    trace, gen = _get_tracer(settings).start(facts, settings, prompt)
+    try:
+        resp = httpx.post(
+            f"{settings.llm_base_url}/chat/completions",
+            headers={"Authorization": f"Bearer {settings.llm_api_key}"},
+            json={
+                "model": settings.llm_model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.2,
+                "max_tokens": 500,
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        body = resp.json()
+    except Exception as exc:
+        if gen:
+            gen.end(level="ERROR", status_message=str(exc))
+        raise
+    text = body["choices"][0]["message"]["content"].strip()
+    ok, unknown = citations_valid(text, facts)
+    if gen:
+        usage = body.get("usage") or {}
+        gen.end(
+            output=text,
+            usage={"input": usage.get("prompt_tokens"), "output": usage.get("completion_tokens")},
+        )
+        trace.score(name="citations_valid", value=1 if ok else 0, comment=", ".join(unknown) or None)
+    return text, ok
+
+
+def llm_enabled(settings: Settings) -> bool:
+    # ECS injects "none" when no key is configured (SSM parameters cannot be empty).
+    return bool(settings.llm_api_key) and settings.llm_api_key != "none"
 
 
 def write_report(
     car_category, assessments, fraud, total_low, total_high, settings: Settings
 ) -> tuple[str, str]:
-    """Return (report_text, generator) where generator is 'llm:<model>' or 'template'."""
-    if settings.llm_api_key:
+    """Return (report_text, generator): 'llm:<model>', 'template' or 'template:unfaithful-llm'."""
+    if llm_enabled(settings):
         facts = build_facts(car_category, assessments, fraud, total_low, total_high)
         try:
-            return llm_report(facts, settings), f"llm:{settings.llm_model}"
+            text, ok = llm_report(facts, settings)
+            if ok:
+                return text, f"llm:{settings.llm_model}"
+            log.warning("LLM report cited claims it was not given; using the template")
+            fallback = template_report(car_category, assessments, fraud, total_low, total_high)
+            return fallback, "template:unfaithful-llm"
         except Exception as exc:  # network, quota, etc. -> never fail the claim over the report
             log.warning("LLM report failed, using template: %s", exc)
     return template_report(car_category, assessments, fraud, total_low, total_high), "template"

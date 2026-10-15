@@ -48,6 +48,10 @@ class Settings(BaseSettings):
     llm_base_url: str = "https://api.groq.com/openai/v1"
     llm_model: str = "llama-3.1-8b-instant"
     prompt_version: str = "v1"
+    # Langfuse tracing of report generation (optional)
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
+    langfuse_host: str = "https://cloud.langfuse.com"
 
     # Drift: share of monitored columns that must drift before retraining is suggested
     drift_share_threshold: float = 0.3
