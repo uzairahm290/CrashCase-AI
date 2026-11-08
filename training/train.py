@@ -64,15 +64,17 @@ def main() -> None:
             name="damage-seg",
             exist_ok=True,
         )
+        # Ask the trainer where it saved: Ultralytics 8.4 nests runs under the task name
+        run_dir = Path(model.trainer.save_dir)
         metrics = model.val(data=params["data"], split="val").results_dict
         metrics = {clean(k): float(v) for k, v in metrics.items()}
         mlflow.log_metrics(metrics)
 
-        best = Path("runs/damage-seg/weights/best.pt")
+        best = run_dir / "weights" / "best.pt"
         Path("models").mkdir(exist_ok=True)
         shutil.copy2(best, "models/damage-seg.pt")
         mlflow.log_artifact(str(best), artifact_path="weights")
-        for plot in Path("runs/damage-seg").glob("*.png"):
+        for plot in run_dir.glob("*.png"):
             mlflow.log_artifact(str(plot), artifact_path="plots")
 
         # Register so the retrain flow's gate can promote it to the "champion" alias.
