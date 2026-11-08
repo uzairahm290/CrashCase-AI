@@ -32,7 +32,7 @@ COPY scripts ./scripts
 COPY training ./training
 COPY serving ./serving
 COPY params.yaml dvc.yaml ./
-RUN mkdir -p /app/data/uploads /app/models && chown -R app:app /app
+RUN mkdir -p /app/data/uploads /app/models /home/app/.cache && chown -R app:app /app /home/app/.cache
 USER app
 EXPOSE 8000 9100
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s CMD curl -fs http://localhost:8000/health || exit 1

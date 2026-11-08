@@ -16,3 +16,4 @@ datasets/
 *.tfstate*
 terraform.tfvars
 .terraform.lock.hcl.bak
+dump.rdb

@@ -1,0 +1,21 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: python training/prepare_cardd.py --src datasets/CarDD_COCO --out 
+      datasets/cardd_yolo
+    deps:
+    - path: datasets/CarDD_COCO
+      hash: md5
+      md5: 74c89eb89444c159bd7e907fb7ea2a37.dir
+      size: 3056423701
+      nfiles: 4004
+    - path: training/prepare_cardd.py
+      hash: md5
+      md5: 464e903039eea6901dffb9600f917674
+      size: 2749
+    outs:
+    - path: datasets/cardd_yolo
+      hash: md5
+      md5: 0fe266a62b928371902ff9536aa811f3.dir
+      size: 2750312886
+      nfiles: 7253

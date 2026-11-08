@@ -23,6 +23,7 @@ x-app: &app
     CC_CORS_ORIGINS: http://localhost:3000
   volumes:
     - uploads:/app/data/uploads
+    - model-cache:/home/app/.cache   # CLIP / YOLO base weights, downloaded once and shared
     - ./models:/app/models:ro
   depends_on:
     postgres:
@@ -164,5 +165,6 @@ services:
 volumes:
   labelstudio:
   uploads:
+  model-cache:
   pgdata:
   mlflow:
