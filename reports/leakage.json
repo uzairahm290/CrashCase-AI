@@ -1,0 +1,85 @@
+{
+  "max_hamming": 36,
+  "policy": "test untouched; val loses matches of test; train loses matches of val or test",
+  "images_before": {
+    "train": 2816,
+    "val": 810,
+    "test": 374
+  },
+  "excluded_count": {
+    "train": 6,
+    "val": 0,
+    "test": 0
+  },
+  "images_after": {
+    "train": 2810,
+    "val": 810,
+    "test": 374
+  },
+  "cross_split_pairs": 6,
+  "nearest_distance_percentiles": {
+    "train-val": {
+      "0": 11,
+      "1": 59,
+      "5": 74,
+      "50": 93
+    },
+    "train-test": {
+      "0": 20,
+      "1": 68,
+      "5": 79,
+      "50": 96
+    },
+    "val-test": {
+      "0": 58,
+      "1": 71,
+      "5": 80,
+      "50": 96
+    }
+  },
+  "exclude": {
+    "train": [
+      "000457.jpg",
+      "000473.jpg",
+      "000872.jpg",
+      "001883.jpg",
+      "002634.jpg",
+      "003623.jpg"
+    ],
+    "val": [],
+    "test": []
+  },
+  "pairs": [
+    {
+      "a": "train/000473.jpg",
+      "b": "val/000790.jpg",
+      "distance": 11
+    },
+    {
+      "a": "train/002634.jpg",
+      "b": "test/003935.jpg",
+      "distance": 20
+    },
+    {
+      "a": "train/001883.jpg",
+      "b": "val/003843.jpg",
+      "distance": 21
+    },
+    {
+      "a": "train/000872.jpg",
+      "b": "val/000876.jpg",
+      "distance": 26
+    },
+    {
+      "a": "train/000457.jpg",
+      "b": "test/001843.jpg",
+      "distance": 29
+    },
+    {
+      "a": "train/003623.jpg",
+      "b": "val/002815.jpg",
+      "distance": 34
+    }
+  ],
+  "passed": true
+}

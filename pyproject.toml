@@ -41,6 +41,14 @@ flows = [
     "mlflow>=2.12",
 ]
 serving = ["bentoml>=1.3,<2"]
+# Everything `dvc repro` needs. MLflow below 3 to match the compose stack's 2.14 server.
+train = [
+    "ultralytics>=8.2",
+    "mlflow>=2.12,<3",
+    "sqlalchemy<2.1",  # mlflow 2.x imports FallbackAsyncAdaptedQueuePool, removed in SQLAlchemy 2.1
+    "scikit-learn>=1.4",
+    "dvc[s3]>=3.50",
+]
 dev = ["pytest>=8.0", "ruff>=0.4"]
 
 [tool.setuptools.packages.find]

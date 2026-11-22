@@ -1,0 +1,49 @@
+{
+  "passed": true,
+  "errors": {},
+  "warnings": {},
+  "stats": {
+    "train2017": {
+      "images": 2816,
+      "annotations": 6211,
+      "malformed_annotations": 0,
+      "images_without_labels": 0,
+      "class_counts": {
+        "crack": 651,
+        "dent": 1806,
+        "glass shatter": 475,
+        "lamp broken": 494,
+        "scratch": 2560,
+        "tire flat": 225
+      }
+    },
+    "val2017": {
+      "images": 810,
+      "annotations": 1744,
+      "malformed_annotations": 0,
+      "images_without_labels": 0,
+      "class_counts": {
+        "crack": 177,
+        "dent": 501,
+        "glass shatter": 135,
+        "lamp broken": 141,
+        "scratch": 728,
+        "tire flat": 62
+      }
+    },
+    "test2017": {
+      "images": 374,
+      "annotations": 785,
+      "malformed_annotations": 0,
+      "images_without_labels": 0,
+      "class_counts": {
+        "crack": 70,
+        "dent": 236,
+        "glass shatter": 71,
+        "lamp broken": 69,
+        "scratch": 307,
+        "tire flat": 32
+      }
+    }
+  }
+}

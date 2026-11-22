@@ -2,20 +2,153 @@ schema: '2.0'
 stages:
   prepare:
     cmd: python training/prepare_cardd.py --src datasets/CarDD_COCO --out 
-      datasets/cardd_yolo
+      datasets/cardd_yolo --leakage reports/leakage.json
     deps:
     - path: datasets/CarDD_COCO
       hash: md5
       md5: 74c89eb89444c159bd7e907fb7ea2a37.dir
       size: 3056423701
       nfiles: 4004
+    - path: reports/leakage.json
+      hash: md5
+      md5: d6623f84ad209c2537ec92e0a5ed332e
+      size: 1456
     - path: training/prepare_cardd.py
       hash: md5
-      md5: 464e903039eea6901dffb9600f917674
-      size: 2749
+      md5: 643363106d25e29f52ac240407d0f9ff
+      size: 4067
     outs:
     - path: datasets/cardd_yolo
       hash: md5
-      md5: 0fe266a62b928371902ff9536aa811f3.dir
-      size: 2750312886
-      nfiles: 7253
+      md5: 4cae290c264f39a54b8dd3a42bfe4247.dir
+      size: 3030732990
+      nfiles: 7989
+  validate:
+    cmd: python training/validate_data.py --src datasets/CarDD_COCO --out 
+      reports/data_validation.json
+    deps:
+    - path: datasets/CarDD_COCO
+      hash: md5
+      md5: 74c89eb89444c159bd7e907fb7ea2a37.dir
+      size: 3056423701
+      nfiles: 4004
+    - path: training/validate_data.py
+      hash: md5
+      md5: c97f80db98a97a876b213c4fa0c2692b
+      size: 10251
+    params:
+      params.yaml:
+        validate:
+          classes:
+          - dent
+          - scratch
+          - crack
+          - glass shatter
+          - lamp broken
+          - tire flat
+          min_images: 100
+          max_bad_annotation_frac: 0.01
+    outs:
+    - path: reports/data_validation.json
+      hash: md5
+      md5: 863bc95f22907fda210003acf89d2c27
+      size: 1037
+  leakage:
+    cmd: python training/check_leakage.py --src datasets/CarDD_COCO --out 
+      reports/leakage.json
+    deps:
+    - path: datasets/CarDD_COCO
+      hash: md5
+      md5: 74c89eb89444c159bd7e907fb7ea2a37.dir
+      size: 3056423701
+      nfiles: 4004
+    - path: reports/data_validation.json
+      hash: md5
+      md5: 863bc95f22907fda210003acf89d2c27
+      size: 1037
+    - path: training/check_leakage.py
+      hash: md5
+      md5: 4d017c2b0788c11c33223eb77cc04c2a
+      size: 6101
+    params:
+      params.yaml:
+        leakage:
+          max_hamming: 36
+          max_excluded_frac: 0.05
+    outs:
+    - path: reports/leakage.json
+      hash: md5
+      md5: d6623f84ad209c2537ec92e0a5ed332e
+      size: 1456
+  baseline:
+    cmd: python training/baseline.py
+    deps:
+    - path: datasets/cardd_yolo
+      hash: md5
+      md5: 4cae290c264f39a54b8dd3a42bfe4247.dir
+      size: 3030732990
+      nfiles: 7989
+    - path: training/baseline.py
+      hash: md5
+      md5: ab95f158335afcd76932e2a440c14930
+      size: 6023
+    - path: training/common.py
+      hash: md5
+      md5: d716cf17369bef31d73d80890931944f
+      size: 4137
+    params:
+      params.yaml:
+        baseline:
+          experiment: crashcase-damage-seg
+          thumb: 64
+          C: 1.0
+          seed: 0
+        train.data: datasets/cardd_yolo/data.yaml
+    outs:
+    - path: reports/baseline_metrics.json
+      hash: md5
+      md5: a7da7e3b7dac61e319386481c4a2ba69
+      size: 1119
+  train:
+    cmd: python training/train.py
+    deps:
+    - path: datasets/cardd_yolo
+      hash: md5
+      md5: 4cae290c264f39a54b8dd3a42bfe4247.dir
+      size: 3030732990
+      nfiles: 7989
+    - path: reports/baseline_metrics.json
+      hash: md5
+      md5: a7da7e3b7dac61e319386481c4a2ba69
+      size: 1119
+    - path: training/common.py
+      hash: md5
+      md5: d716cf17369bef31d73d80890931944f
+      size: 4137
+    - path: training/train.py
+      hash: md5
+      md5: 0247774d7cbd58588689fc80d1a6ee1e
+      size: 7505
+    params:
+      params.yaml:
+        train:
+          model: yolov8n-seg.pt
+          data: datasets/cardd_yolo/data.yaml
+          epochs: 15
+          imgsz: 640
+          batch: 16
+          seed: 0
+          fraction: 1.0
+          conf: 0.25
+          experiment: crashcase-damage-seg
+          registered_model: crashcase-damage-seg
+          run_name: yolov8n-seg
+    outs:
+    - path: metrics.json
+      hash: md5
+      md5: b8670747791b4189f79349930a802818
+      size: 1433
+    - path: models/damage-seg.pt
+      hash: md5
+      md5: 465df8e2c5ce981ee1fdac4c97f9b91b
+      size: 7016884

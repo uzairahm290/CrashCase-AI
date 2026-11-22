@@ -11,7 +11,8 @@ models/*.pt
 mlruns/
 mlartifacts/
 runs/
-datasets/
+datasets/*
+!datasets/*.dvc
 .terraform/
 *.tfstate*
 terraform.tfvars

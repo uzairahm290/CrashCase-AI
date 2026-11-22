@@ -94,6 +94,26 @@ services:
       - labelstudio:/label-studio/data
     profiles: ["mlops"]
 
+  # --- Reproduce training: docker compose --profile train run --rm train ------------------
+  # Runs scripts/reproduce.sh (dvc pull, dvc repro --force) and logs every run to the mlflow
+  # service. Reads AWS_* from .env for the DVC remote.
+  train:
+    build:
+      context: .
+      dockerfile: docker/train.Dockerfile
+    image: crashcase-train:${IMAGE_TAG:-dev}
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    volumes:
+      - .:/work
+      - model-cache:/root/.cache
+    shm_size: 2gb   # PyTorch dataloader workers share memory
+    depends_on: [mlflow]
+    profiles: ["train"]
+
   # --- Detector as its own BentoML service: docker compose --profile bento up ------------
   # Then point workers at it: CC_DETECTOR_BACKEND=bento CC_BENTO_URL=http://detector:3005
   detector:
