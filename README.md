@@ -87,18 +87,51 @@ cd web && npm install && API_URL=http://localhost:8000 npm run dev
 
 ## Train the damage model
 
-Accuracy isn't the goal of this project; the pipeline around the model is. A small YOLOv8n-seg trained for 15 epochs is enough.
+Accuracy isn't the goal of this project; the pipeline around the model is. A small YOLOv8n-seg trained for 15 epochs is enough. What matters is that the run is checked, leak-free, compared against a baseline, tracked, and reproducible with one command.
 
-1. Request [CarDD](https://cardd-ustc.github.io) and put `CarDD_COCO` in `datasets/`. Any COCO-format damage set (for example a Roboflow export) works too.
-2. Train on a free Kaggle or Colab GPU, tracked in MLflow and versioned with DVC:
+### Reproduce in one command
 
 ```bash
-pip install -e ".[ml,flows]" dvc[s3]
-export MLFLOW_TRACKING_URI=http://localhost:5000
-dvc repro          # prepare_cardd.py -> train.py, re-running only what changed
+make setup        # pip install -e ".[train,dev]"
+make reproduce    # dvc pull + dvc repro --force + dvc metrics diff against the committed run
 ```
 
-`training/train.py` logs parameters, metrics, plots and weights to MLflow and registers a new model version. To serve it, set `CC_DETECTOR_BACKEND=yolo` and `CC_DAMAGE_WEIGHTS=models:/crashcase-damage-seg@champion`, and build the image with `INSTALL_ML=true`.
+or, with nothing installed but Docker (logs to the compose MLflow at http://localhost:5000):
+
+```bash
+make reproduce-docker    # docker compose --profile train run --rm train
+```
+
+Without access to the DVC remote, request [CarDD](https://cardd-ustc.github.io) and put `CarDD_COCO` in `datasets/`; the md5 in `datasets/CarDD_COCO.dvc` confirms it's the same data. Training on a CPU takes hours, so `training/kaggle/crashcase_train.ipynb` runs the same `dvc repro` on a free Kaggle GPU.
+
+### The pipeline
+
+```mermaid
+flowchart LR
+    raw[(CarDD_COCO<br/>DVC-tracked)] --> validate --> leakage --> prepare --> baseline --> train --> reg[(MLflow registry<br/>champion alias)]
+```
+
+| Stage | Script | What it guarantees |
+| --- | --- | --- |
+| `validate` | `training/validate_data.py` | Fails the pipeline on missing or corrupt images, image sizes that disagree with the annotations, broken JSON, unknown image or category ids, a class list that differs between splits, a split below `min_images`, or more than 1% malformed polygons. Report: `reports/data_validation.json`. |
+| `leakage` | `training/check_leakage.py` | 256-bit perceptual hash and MD5 of every photo. Near-duplicates across splits are removed from the less important split (test is never touched). CarDD reuses stock photos with backgrounds cut out or colours re-graded; six such pairs (11-34 bits apart) are dropped from train. Report: `reports/leakage.json`. |
+| `prepare` | `training/prepare_cardd.py` | Converts COCO to YOLO-seg for train, val **and** test, minus the excluded images. |
+| `baseline` | `training/baseline.py` | Logs two baselines to MLflow before any training: a prevalence rule, and colour/gradient-histogram features with logistic regression. |
+| `train` | `training/train.py` | YOLOv8n-seg. Val is for early stopping and model choice; test is only for reporting. Registers a model version and moves the `champion` alias only if val mask mAP beats the current champion. |
+
+The splits are CarDD's own train/val/test, kept apart by the leakage stage. Baselines and YOLO are compared on the same image-level task (which damage types are in this photo, macro F1 over six classes) on the held-out test split. YOLO's mask and box mAP are logged next to it.
+
+### What MLflow records
+
+Every run in the `crashcase-damage-seg` experiment carries its hyperparameters (`params.yaml`), split sizes, the git commit, the DVC md5 of the raw and converted data, and a content fingerprint of the data, plus `dvc.lock` and the data reports as artifacts. Registered versions are tagged with their val and test scores and data fingerprint.
+
+```bash
+make mlflow-ui      # local runs: http://localhost:5001
+make export-runs    # docs/mlflow/: runs.csv, runs.json, registered_model.json, comparison.md
+dvc metrics show    # baseline and model metrics from the committed run
+```
+
+`training/train.py` logs to `MLFLOW_TRACKING_URI` (default `./mlflow.db`). To serve the registered model, set `CC_DETECTOR_BACKEND=yolo` and `CC_DAMAGE_WEIGHTS=models:/crashcase-damage-seg@champion`, and build the image with `INSTALL_ML=true`.
 
 Once real weights exist, rebuild the index from real photo crops so retrieval compares like with like:
 
@@ -191,7 +224,7 @@ src/crashcase/
   maintenance.py re-indexing
 web/            Next.js adjuster app
 serving/        BentoML detector service
-training/       CarDD conversion and YOLOv8-seg training with MLflow
+training/       data checks, leakage check, CarDD conversion, baselines, YOLOv8-seg training
 infra/terraform AWS infrastructure
 scripts/        seeding, Label Studio, canary deploy
 monitoring/     Prometheus config, Grafana dashboard
