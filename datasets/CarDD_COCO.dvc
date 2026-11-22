@@ -1,0 +1,6 @@
+outs:
+- md5: 74c89eb89444c159bd7e907fb7ea2a37.dir
+  size: 3056423701
+  nfiles: 4004
+  hash: md5
+  path: CarDD_COCO

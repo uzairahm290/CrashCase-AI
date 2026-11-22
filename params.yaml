@@ -1,3 +1,21 @@
+validate:
+  classes: [dent, scratch, crack, glass shatter, lamp broken, tire flat]
+  min_images: 100                 # per split
+  max_bad_annotation_frac: 0.01   # malformed annotations tolerated (skipped) per split
+
+leakage:
+  # Of 256 bits. Looser than the fraud check's 18: CarDD reuses stock photos with the background
+  # cut out or re-graded, and those pairs sit at 11-34 bits (see reports/leakage.json). The
+  # nearest genuinely different photos are 39+. A false positive here only costs a training image.
+  max_hamming: 36
+  max_excluded_frac: 0.05         # more than this many duplicates means the split itself is broken
+
+baseline:
+  experiment: crashcase-damage-seg
+  thumb: 64                       # images are shrunk to thumb x thumb before feature extraction
+  C: 1.0                          # logistic regression regularisation
+  seed: 0
+
 train:
   model: yolov8n-seg.pt        # small on purpose: accuracy is not the goal, deployment is
   data: datasets/cardd_yolo/data.yaml
@@ -5,6 +23,8 @@ train:
   imgsz: 640
   batch: 16
   seed: 0
+  fraction: 1.0                # share of the train split to use; lower it for a quick smoke run
+  conf: 0.25                   # detection threshold for the image-level comparison with the baseline
   experiment: crashcase-damage-seg
   registered_model: crashcase-damage-seg
-  run_name: yolov8n-seg-baseline
+  run_name: yolov8n-seg

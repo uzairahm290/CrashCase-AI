@@ -1,0 +1,42 @@
+{
+  "prior": {
+    "val/f1_dent": 0.0,
+    "val/f1_scratch": 0.6946,
+    "val/f1_crack": 0.0,
+    "val/f1_glass_shatter": 0.0,
+    "val/f1_lamp_broken": 0.0,
+    "val/f1_tire_flat": 0.0,
+    "val/macro_f1": 0.1158,
+    "val/micro_f1": 0.4211,
+    "val/exact_match": 0.2432,
+    "test/f1_dent": 0.0,
+    "test/f1_scratch": 0.6571,
+    "test/f1_crack": 0.0,
+    "test/f1_glass_shatter": 0.0,
+    "test/f1_lamp_broken": 0.0,
+    "test/f1_tire_flat": 0.0,
+    "test/macro_f1": 0.1095,
+    "test/micro_f1": 0.394,
+    "test/exact_match": 0.2219
+  },
+  "hog_logreg": {
+    "val/f1_dent": 0.6304,
+    "val/f1_scratch": 0.7173,
+    "val/f1_crack": 0.3521,
+    "val/f1_glass_shatter": 0.5676,
+    "val/f1_lamp_broken": 0.4371,
+    "val/f1_tire_flat": 0.4769,
+    "val/macro_f1": 0.5302,
+    "val/micro_f1": 0.5977,
+    "val/exact_match": 0.1494,
+    "test/f1_dent": 0.6132,
+    "test/f1_scratch": 0.7102,
+    "test/f1_crack": 0.2832,
+    "test/f1_glass_shatter": 0.5729,
+    "test/f1_lamp_broken": 0.3942,
+    "test/f1_tire_flat": 0.5,
+    "test/macro_f1": 0.5123,
+    "test/micro_f1": 0.579,
+    "test/exact_match": 0.1444
+  }
+}
