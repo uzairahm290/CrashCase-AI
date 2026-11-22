@@ -107,5 +107,48 @@ stages:
     outs:
     - path: reports/baseline_metrics.json
       hash: md5
-      md5: df273be8b4d9602673ae472296698c46
-      size: 1120
+      md5: a7da7e3b7dac61e319386481c4a2ba69
+      size: 1119
+  train:
+    cmd: python training/train.py
+    deps:
+    - path: datasets/cardd_yolo
+      hash: md5
+      md5: 4cae290c264f39a54b8dd3a42bfe4247.dir
+      size: 3030732990
+      nfiles: 7989
+    - path: reports/baseline_metrics.json
+      hash: md5
+      md5: a7da7e3b7dac61e319386481c4a2ba69
+      size: 1119
+    - path: training/common.py
+      hash: md5
+      md5: d716cf17369bef31d73d80890931944f
+      size: 4137
+    - path: training/train.py
+      hash: md5
+      md5: 0247774d7cbd58588689fc80d1a6ee1e
+      size: 7505
+    params:
+      params.yaml:
+        train:
+          model: yolov8n-seg.pt
+          data: datasets/cardd_yolo/data.yaml
+          epochs: 15
+          imgsz: 640
+          batch: 16
+          seed: 0
+          fraction: 1.0
+          conf: 0.25
+          experiment: crashcase-damage-seg
+          registered_model: crashcase-damage-seg
+          run_name: yolov8n-seg
+    outs:
+    - path: metrics.json
+      hash: md5
+      md5: b8670747791b4189f79349930a802818
+      size: 1433
+    - path: models/damage-seg.pt
+      hash: md5
+      md5: 465df8e2c5ce981ee1fdac4c97f9b91b
+      size: 7016884

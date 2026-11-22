@@ -1,0 +1,24 @@
+{
+  "name": "crashcase-damage-seg",
+  "aliases": {
+    "champion": "1"
+  },
+  "versions": [
+    {
+      "version": "1",
+      "run_id": "dfcea9742989460c82ac61e7a0dfe08d",
+      "source": "mlflow-artifacts:/d790c1e4e37544fa832efb02a5c9cce5/dfcea9742989460c82ac61e7a0dfe08d/artifacts/weights",
+      "status": "READY",
+      "created": 1795372597640,
+      "tags": {
+        "champion": "true",
+        "data_fingerprint": "f50a685963c82857bfbde35a0b140de3",
+        "imported_from": "kaggle:crashcase-damage-seg/1",
+        "metrics/mAP50-95_M": "0.5123",
+        "test/macro_f1": "0.8111",
+        "test/mAP50-95_M": "0.4900"
+      },
+      "aliases": []
+    }
+  ]
+}

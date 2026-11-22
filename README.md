@@ -102,7 +102,7 @@ or, with nothing installed but Docker (logs to the compose MLflow at http://loca
 make reproduce-docker    # docker compose --profile train run --rm train
 ```
 
-Without access to the DVC remote, request [CarDD](https://cardd-ustc.github.io) and put `CarDD_COCO` in `datasets/`; the md5 in `datasets/CarDD_COCO.dvc` confirms it's the same data. Training on a CPU takes hours, so `training/kaggle/crashcase_train.ipynb` runs the same `dvc repro` on a free Kaggle GPU.
+The DVC remote is the private DagsHub repo [uzairahm290/CrashCase-AI](https://dagshub.com/uzairahm290/CrashCase-AI). To pull from it, set your DagsHub token once with `dvc remote modify origin --local access_key_id <token>` and the same for `secret_access_key`. Without access, request [CarDD](https://cardd-ustc.github.io) and put `CarDD_COCO` in `datasets/`; the md5 in `datasets/CarDD_COCO.dvc` confirms it's the same data. Training on a CPU takes hours, so `training/kaggle/crashcase_train.ipynb` runs the same `dvc repro` on a free Kaggle GPU.
 
 ### The pipeline
 
@@ -120,6 +120,18 @@ flowchart LR
 | `train` | `training/train.py` | YOLOv8n-seg. Val is for early stopping and model choice; test is only for reporting. Registers a model version and moves the `champion` alias only if val mask mAP beats the current champion. |
 
 The splits are CarDD's own train/val/test, kept apart by the leakage stage. Baselines and YOLO are compared on the same image-level task (which damage types are in this photo, macro F1 over six classes) on the held-out test split. YOLO's mask and box mAP are logged next to it.
+
+### Results (registered model `crashcase-damage-seg` v1, alias `champion`)
+
+Held-out CarDD test split, 374 photos. Image-level scores ask "which of the six damage types are in this photo?".
+
+| Run | test macro F1 | test micro F1 | test exact match | test mask mAP50-95 |
+| --- | --- | --- | --- | --- |
+| `baseline-prior` (rule) | 0.110 | 0.394 | 0.222 | n/a |
+| `baseline-hog-logreg` (classical) | 0.498 | 0.560 | 0.120 | n/a |
+| `yolov8n-seg`, 15 epochs | **0.811** | **0.837** | **0.639** | **0.490** |
+
+On val, which chose the model, YOLO reaches mask mAP50-95 0.512 and mAP50 0.682. Runs, metrics and the registry are on DagsHub: [experiments](https://dagshub.com/uzairahm290/CrashCase-AI.mlflow/#/experiments/0) and [models](https://dagshub.com/uzairahm290/CrashCase-AI.mlflow/#/models/crashcase-damage-seg). An export is in [docs/mlflow/](docs/mlflow/). The run trained on a Kaggle T4 (`training/kaggle/crashcase_train.ipynb`) and logged to a local MLflow store there. `scripts/import_mlflow_runs.py` copied it to DagsHub unchanged, and each copied run is tagged `imported_from` with its original run id.
 
 ### What MLflow records
 
